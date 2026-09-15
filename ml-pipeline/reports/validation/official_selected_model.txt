@@ -1,0 +1,9 @@
+Official validation model ranking
+=================================
+
+Selected model: logistic_regression
+Macro F1: 1.0000
+High-risk recall: 1.0000
+
+Important:
+This validation uses the official 50-entity dataset and is not a production performance estimate.

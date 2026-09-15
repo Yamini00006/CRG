@@ -1,0 +1,4 @@
+model,accuracy,macro_precision,macro_recall,macro_f1,high_risk_recall
+logistic_regression,1.0,1.0,1.0,1.0,1.0
+decision_tree,0.9995,0.9995838535164377,0.9996296296296295,0.9996065086706393,1.0
+random_forest,1.0,1.0,1.0,1.0,1.0

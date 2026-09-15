@@ -1,0 +1,2 @@
+random_state,test_size,total_rows,training_rows,internal_test_rows,feature_count,target_column,classes
+42,0.2,10000,8000,2000,37,risk_bucket,"['High', 'Low', 'Medium']"

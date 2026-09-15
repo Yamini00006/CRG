@@ -1,0 +1,3 @@
+def generate_explanation(client_name: str, features: dict, ml_result: dict, rule_result: dict, decision_result: dict) -> str:
+    flags = ", ".join(rule_result['critical_flags']) if rule_result['critical_flags'] else "None"
+    return f"Based on the assessment, {client_name} presents a {decision_result['final_risk']} credit risk. The Machine Learning model indicates a {ml_result['predicted_risk']} probability profile, while deterministic rules yield a {rule_result['overall_risk']} risk profile. Critical flags identified: {flags}. The application is currently {decision_result['application_status']} and requires {decision_result['review_requirement']}."

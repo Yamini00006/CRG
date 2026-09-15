@@ -1,0 +1,5 @@
+column,present,non_null_values,status
+PD_1y_pct,True,0,PASS
+LGD_pct,True,0,PASS
+EAD_usd_m,True,0,PASS
+implied_rating,True,0,PASS
