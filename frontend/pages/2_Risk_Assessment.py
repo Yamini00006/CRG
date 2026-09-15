@@ -442,37 +442,38 @@ def render_profile(row: pd.Series):
     # REFERENCE / GROUND TRUTH
     # ========================================================
 
-    with st.expander(
-        "Reference / Ground-Truth Fields (Not ML Inputs)",
-        expanded=False
-    ):
+    # with st.expander(
+    #     "Reference / Ground-Truth Fields (Not ML Inputs)",
+    #     expanded=False
+    # ):
 
-        c1, c2, c3, c4, c5 = st.columns(5)
+    #     c1, c2, c3, c4, c5 = st.columns(5)
 
-        c1.write(
-            f"**PD 1Y (%):** "
-            f"{row['PD_1y_pct']}"
-        )
+    #     c1.write(
+    #         f"**PD 1Y (%):** "
+    #         f"{row['PD_1y_pct']}"
+    #     )
 
-        c2.write(
-            f"**LGD (%):** "
-            f"{row['LGD_pct']}"
-        )
+    #     c2.write(
+    #         f"**LGD (%):** "
+    #         f"{row['LGD_pct']}"
+    #     )
 
-        c3.write(
-            f"**EAD ($M):** "
-            f"{row['EAD_usd_m']}"
-        )
+    #     c3.write(
+    #         f"**EAD ($M):** "
+    #         f"{row['EAD_usd_m']}"
+    #     )
 
-        c4.write(
-            f"**Reference Risk:** "
-            f"{row['risk_bucket']}"
-        )
+    #     c4.write(
+    #         f"**Reference Risk:** "
+    #         f"{row['risk_bucket']}"
+    #     )
 
-        c5.write(
-            f"**Implied Rating:** "
-            f"{row['implied_rating']}"
-        )
+    #     c5.write(
+    #         f"**Implied Rating:** "
+    #         f"{row['implied_rating']}"
+    #     )
+        
 
 
 # ============================================================
@@ -1004,69 +1005,63 @@ tab_existing, tab_new = st.tabs(
 # ============================================================
 
 with tab_existing:
-
     if df.empty:
-
-        st.error(
-            "Official dataset could not be loaded."
-        )
-
+        st.error("No client data available.")
     else:
-
-        selected_name = st.selectbox(
-            "Select Existing Entity",
-            df["entity_name"].tolist(),
+        search_text = st.text_input(
+            "Search Existing Client",
+            placeholder="Search by client name or Entity ID"
         )
 
-        row = df.loc[
-            df["entity_name"] == selected_name
-        ].iloc[0]
+        filtered_df = df.copy()
 
-        render_profile(row)
+        if search_text.strip():
+            query = search_text.strip().lower()
 
-        if st.button(
-            "Assess Existing Client",
-            type="primary"
-        ):
+            filtered_df = df[
+                df["entity_name"].astype(str).str.lower().str.contains(query, na=False)
+                | df["entity_id"].astype(str).str.lower().str.contains(query, na=False)
+            ]
 
-            try:
+        if filtered_df.empty:
+            st.warning("No matching client found.")
+        else:
+            selected_name = st.selectbox(
+                "Select Client",
+                filtered_df["entity_name"].tolist(),
+            )
 
-                features = build_feature_payload(
-                    row
-                )
+            row = filtered_df[
+                filtered_df["entity_name"] == selected_name
+            ].iloc[0]
 
-                st.caption(
-                    f"Sending exactly "
-                    f"{len(features)} model features "
-                    f"to the assessment service."
-                )
+            render_profile(row)
 
-                with st.spinner(
-                    "Running ML model, rule engine "
-                    "and decision engine..."
-                ):
-
-                    data = post_assessment(
-                        row["entity_id"],
-                        row["entity_name"],
-                        features
+            if st.button("Assess Existing Client", type="primary"):
+                try:
+                    features = build_feature_payload(row)
+                    st.caption(
+                        f"Sending exactly {len(features)} model features to the assessment service."
                     )
 
-                st.session_state[
-                    "assessments"
-                ].append(data)
+                    with st.spinner(
+                        "Running ML model, rule engine and decision engine..."
+                    ):
+                        data = post_assessment(
+                            row["entity_id"],
+                            row["entity_name"],
+                            features
+                        )
 
-                render_results(data)
+                    st.session_state["assessments"].append(data)
+                    render_results(data)
 
-            except (
-                ValueError,
-                RuntimeError,
-                requests.exceptions.RequestException
-            ) as exc:
-
-                st.error(
-                    f"Assessment failed: {exc}"
-                )
+                except (
+                    ValueError,
+                    RuntimeError,
+                    requests.exceptions.RequestException
+                ) as exc:
+                    st.error(f"Assessment failed: {exc}")
 
 
 # ============================================================
