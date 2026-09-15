@@ -254,6 +254,34 @@ def assess_credit_risk(request: AssessmentRequest):
                 model_version = ml_result.get("model_version")
 
                 # -------------------------------------------------
+                # Determine database entity_id
+                #
+                # Existing Client:
+                #   Use the real entity_id from clients.
+                #
+                # New Application:
+                #   There is no row in clients, so store NULL.
+                #   This preserves the foreign-key constraint.
+                # -------------------------------------------------
+
+                cursor.execute(
+                    """
+                    SELECT 1
+                    FROM clients
+                    WHERE entity_id = %s;
+                    """,
+                    (request.entity_id,),
+                )
+
+                client_exists = cursor.fetchone() is not None
+
+                db_entity_id = (
+                    request.entity_id
+                    if client_exists
+                    else None
+                )
+
+                # -------------------------------------------------
                 # Insert assessment
                 # -------------------------------------------------
 
@@ -288,7 +316,7 @@ def assess_credit_risk(request: AssessmentRequest):
                     RETURNING assessment_id;
                     """,
                     (
-                        request.entity_id,
+                        db_entity_id,
                         request.entity_name,
                         ml_result["predicted_risk"],
                         rule_result["overall_risk"],
@@ -460,25 +488,31 @@ def get_assessments():
 
                     assessments.append({
                         "assessment_id": row["assessment_id"],
+
                         "entity_info": {
                             "id": row["entity_id"],
                             "name": row["entity_name"],
                         },
+
                         "ml_assessment": {
                             "predicted_risk": row["ml_risk"],
                             "probabilities": row["ml_probabilities"] or {},
                             "model_version": row["model_version"],
                         },
+
                         "rule_assessment": {
                             "overall_risk": row["rule_risk"],
                             "critical_flags": row["critical_flags"] or [],
                         },
+
                         "final_decision": {
                             "final_risk": row["final_risk"],
                             "application_status": row["application_status"],
                             "review_requirement": row["review_requirement"],
                         },
+
                         "explanation": row["explanation"],
+
                         "created_at": row["created_at"].isoformat()
                         if row["created_at"]
                         else None,
